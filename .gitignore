@@ -1,0 +1,18 @@
+# Private recordings, results, approvals and hosting identity
+/inbox/
+/sessions/
+/intake/
+/data/
+/explorer/data.js
+/config/publishing.json
+/config/transcript-sharing.json
+/site/
+/threadline/
+# Generated/local state
+/build/
+/.publication/
+/.venv/
+__pycache__/
+*.pyc
+.env*
+.DS_Store

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Narralogue Explorer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="data.js?v=cbfc91574fae"></script>
+<style>
+  :root {
+    --de: #e63946; --en: #6a4c93; --fr: #457b9d; --es: #f4a261; --other: #888;
+    --bg: #fafaf7; --card: #ffffff; --ink: #2b2b2b; --muted: #777;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", sans-serif; margin: 0;
+         background: var(--bg); color: var(--ink); }
+  header { padding: 1.2rem 2rem 0.6rem; }
+  h1 { margin: 0; font-size: 1.5rem; }
+  h1 small { font-weight: 400; color: var(--muted); font-size: 0.9rem; margin-left: .8rem; }
+  .filters { padding: 0 2rem 0.8rem; display: flex; gap: .5rem; }
+  .filters button { border: 1px solid #ccc; background: var(--card); padding: .3rem .9rem;
+                    border-radius: 999px; cursor: pointer; font-size: .85rem; }
+  .filters button.active { color: #fff; border-color: transparent; }
+  .filters button.active[data-lang="all"] { background: #333; }
+  .filters button.active[data-lang="de"] { background: var(--de); }
+  .filters button.active[data-lang="en"] { background: var(--en); }
+  .filters button.active[data-lang="fr"] { background: var(--fr); }
+  .filters button.active[data-lang="es"] { background: var(--es); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+          gap: 1rem; padding: 0 2rem 1rem; }
+  .card { background: var(--card); border: 1px solid #e5e5e0; border-radius: 10px;
+          padding: 1rem; }
+  .card h3 { margin: 0 0 .6rem; font-size: .95rem; color: var(--muted); font-weight: 600; }
+  .card .chart-wrap { position: relative; height: 220px; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th, td { text-align: right; padding: .45rem .6rem; border-bottom: 1px solid #eee; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { color: var(--muted); font-weight: 600; cursor: default; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #f3f3ee; }
+  .pill { display: inline-block; padding: .1rem .55rem; border-radius: 999px;
+          color: #fff; font-size: .75rem; }
+  .table-card { margin: 0 2rem 1rem; }
+  .table-card { overflow-x: auto; }
+  .method-card { margin: 0 2rem 1rem; line-height: 1.5; }
+  .method-card summary, #detail-proficiency summary { cursor: pointer; font-weight: 600; }
+  .method-body { max-width: 76rem; overflow-x: auto; }
+  .method-body h1 { font-size: 1.3rem; margin-top: 1rem; }
+  .method-body h2 { font-size: 1.1rem; }
+  .score-card { grid-column: 1 / -1; }
+  .score-card .chart-wrap { height: 290px; }
+  .score-note { font-size: .9rem; line-height: 1.5; margin: .3rem 0 .8rem; }
+  #detail-proficiency { margin: 1rem 0; line-height: 1.5; }
+  .dimension { border-top: 1px solid #eee; padding: .7rem 0; }
+  .dimension p { margin: .3rem 0; }
+  .dimension blockquote { margin: .4rem 0; padding-left: .8rem; border-left: 3px solid #ddd; color: #555; }
+  a { color: #225d85; }
+  #detail { margin: 0 2rem 2rem; display: none; }
+  #detail .cols { display: grid; grid-template-columns: 1.1fr .9fr; gap: 1rem; }
+  #detail h2 { margin-top: 0; font-size: 1.1rem; }
+  #detail .transcript { white-space: pre-wrap; font-size: .9rem; line-height: 1.55;
+        max-height: 420px; overflow-y: auto; color: #444; }
+  #detail .analysis { font-size: .9rem; line-height: 1.5; max-height: 420px; overflow-y: auto; }
+  #detail .analysis h1, #detail .analysis h2, #detail .analysis h3 { font-size: 1rem; }
+  .statline { display: flex; flex-wrap: wrap; gap: 1.2rem; margin: .6rem 0 1rem;
+              font-size: .85rem; color: var(--muted); }
+  .statline b { color: var(--ink); font-size: 1.05rem; display: block; }
+  @media (max-width: 900px) { #detail .cols { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) {
+    header { padding: 1rem; } h1 small { display: block; margin: .3rem 0; }
+    .filters { padding: 0 1rem 1rem; flex-wrap: wrap; }
+    .grid { grid-template-columns: minmax(0, 1fr); padding: 0 1rem 1rem; }
+    .table-card, .method-card, #detail { margin-left: 1rem; margin-right: 1rem; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Narralogue Explorer <small>talk to yourself, measurably</small></h1>
+  <p style="max-width:76rem;line-height:1.5">A <a href="https://everydaysystems.com/">language-learning Everyday System</a>: describe the world around you in your target language for ten minutes a day. Record an occasional session, reflect on the analysis, and practice a few useful sentences.</p>
+  <p id="audience-note" style="max-width:76rem;line-height:1.5"></p>
+  <p><a href="https://github.com/brainheart/narralyzer">Get the tool &amp; try the methodology</a></p>
+</header>
+<div class="filters" id="filters">
+  <button data-lang="all" class="active">All</button>
+</div>
+
+<div class="grid" id="charts"></div>
+<details class="card method-card" id="methodology">
+  <summary>How CEFR estimates and the new 0–100 score work</summary>
+  <div class="method-body" id="methodology-body"></div>
+</details>
+
+<div class="card table-card">
+  <h3>Sessions (click a row for transcript &amp; analysis)</h3>
+  <table id="sessions">
+    <thead><tr>
+      <th>Date</th><th>Lang</th><th>Min</th><th>Words</th><th>Unique</th>
+      <th>WPM</th><th>Artic. WPM</th><th>Speech %</th><th>MATTR</th>
+      <th>Max pause</th><th>Longest run</th><th>Err/100w</th><th title="Historical holistic estimate, not a test result">Legacy CEFR</th><th>Proficiency /100</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="card" id="detail">
+  <h2 id="detail-title"></h2>
+  <div class="statline" id="detail-stats"></div>
+  <div id="detail-proficiency"></div>
+  <div class="cols">
+    <div><h3>Analysis</h3><div class="analysis" id="detail-analysis"></div></div>
+    <div><h3>Transcript</h3><p id="transcript-sharing" style="font-size:.85rem;color:var(--muted)"></p><div class="transcript" id="detail-transcript"></div></div>
+  </div>
+</div>
+
+<script>
+const COLORS = { de: '#e63946', en: '#6a4c93', fr: '#457b9d', es: '#f4a261' };
+const color = l => COLORS[l] || '#888';
+const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const scoreText = p => p?.status === 'rated' ? `${p.score}` : ({withheld:'Withheld',stale:'Needs reassessment'}[p?.status] || 'Not rated');
+const bandText = n => {
+  const labels = ['Below A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const base = Math.floor(n);
+  return n === base ? labels[base] : `${labels[base]} → ${labels[base + 1]} (${Math.round((n-base)*100)}% of local interval)`;
+};
+document.getElementById('methodology-body').innerHTML = marked.parse(window.PROFICIENCY_METHOD || 'Methodology unavailable.');
+document.getElementById('audience-note').textContent = window.SITE_AUDIENCE === 'public'
+  ? 'Public edition: full transcripts are omitted for privacy unless individually approved. Analyses, practice sentences, and short evidence quotations are included. Scores are experimental estimates, not test results.'
+  : 'Private edition: full transcripts are included. The sharing status beside each transcript shows whether its current text is approved for the public edition.';
+const sessions = (window.SESSIONS || []).slice()
+  .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+const langs = [...new Set(sessions.map(s => s.lang))];
+let filter = 'all';
+let charts = [];
+
+const filtersEl = document.getElementById('filters');
+langs.forEach(l => {
+  const b = document.createElement('button');
+  b.dataset.lang = l;
+  b.textContent = (sessions.find(s => s.lang === l) || {}).language || l;
+  if (!COLORS[l]) b.style.setProperty('--c', '#888');
+  filtersEl.appendChild(b);
+});
+filtersEl.addEventListener('click', e => {
+  if (!e.target.dataset.lang) return;
+  filter = e.target.dataset.lang;
+  [...filtersEl.children].forEach(b => b.classList.toggle('active', b === e.target));
+  render();
+});
+
+const visible = () => sessions.filter(s => filter === 'all' || s.lang === filter);
+
+const METRICS = [
+  ['proficiency', 'Narralogue proficiency · 0–100 (experimental)', null, s => s.proficiency?.status === 'rated' ? s.proficiency.score : null],
+  ['wpm', 'Words per minute (overall pace)'],
+  ['articulation_wpm', 'Articulation rate (WPM while actually speaking)'],
+  ['speech_ratio', 'Speech ratio (share of session filled with speech)', v => (v * 100).toFixed(1) + '%'],
+  ['unique_words', 'Unique words per session'],
+  ['mattr_50', 'Lexical diversity (MATTR-50)'],
+  ['max_pause_sec', 'Longest pause (seconds)'],
+  ['longest_run_words', 'Longest fluent run (words without pausing)'],
+  ['errors_per_100_words', 'Errors per 100 words (from analysis)', null, s => s.analysis && s.analysis.errors_per_100_words],
+];
+
+function buildCharts() {
+  charts.forEach(c => c.destroy()); charts = [];
+  const grid = document.getElementById('charts');
+  grid.innerHTML = '';
+  const data = visible();
+  const dates = [...new Set(data.map(s => s.date))];
+  METRICS.forEach(([key, title, fmt, getter]) => {
+    const card = document.createElement('div');
+    const isScore = key === 'proficiency';
+    card.className = isScore ? 'card score-card' : 'card';
+    const rated = data.filter(s => s.proficiency?.status === 'rated').length;
+    const withheld = data.filter(s => s.proficiency?.status === 'withheld').length;
+    card.innerHTML = `<h3>${title}</h3>${isScore ? `<p class="score-note">Equal-weight ratings of range, accuracy, coherence and fluency, based on transcripts and timing—not a CEFR test. Small changes may be rating noise.<br>${rated} of ${data.length} sessions scored; ${withheld} withheld. Gaps are unscored. Triangles = GPT text; circles = Whisper text. <a href="#methodology" id="method-link">Method &amp; limitations</a></p>` : ''}<div class="chart-wrap"><canvas aria-label="${title}" role="img"></canvas></div>`;
+    grid.appendChild(card);
+    const datasets = langs
+      .filter(l => filter === 'all' || l === filter)
+      .map(l => ({
+        label: l.toUpperCase(),
+        data: data.filter(s => s.lang === l).map(s => ({
+          x: isScore ? Date.parse(s.date + 'T' + s.time + ':00Z') : s.date,
+          y: getter ? getter(s) : s[key],
+          backend: s.transcription_backend || 'local/whisper',
+          id: s.id,
+        })).filter(p => isScore || (p.y !== undefined && p.y !== null)),
+        borderColor: color(l), backgroundColor: color(l),
+        tension: isScore ? 0 : 0.25, pointRadius: isScore ? 5 : 4,
+        spanGaps: false,
+        pointStyle: isScore ? ctx => ctx.raw?.backend.startsWith('openai-api/') ? 'triangle' : 'circle' : 'circle',
+        segment: isScore ? {borderDash: ctx => ctx.p0.raw.backend !== ctx.p1.raw.backend ? [5, 5] : undefined} : undefined,
+      }))
+      .filter(d => d.data.length);
+    charts.push(new Chart(card.querySelector('canvas'), {
+      type: 'line',
+      data: { labels: dates, datasets },
+      options: {
+        maintainAspectRatio: false,
+        scales: isScore ? {
+          x: {type:'linear', ticks:{maxTicksLimit:8, callback:v => new Date(v).toISOString().slice(5,10)}},
+          y: {min:0, max:100, ticks:{stepSize:100/6, callback:v => `${Math.round(v)} · ${['Floor','A1','A2','B1','B2','C1','C2'][Math.round(v*6/100)]}`}},
+        } : { x: { type: 'category', labels: dates } },
+        plugins: { legend: { display: filter === 'all' && datasets.length > 1 },
+          ...(isScore ? {tooltip:{callbacks:{title:items => items[0]?.raw.id || '', label:item => `${item.dataset.label}: ${item.raw.y}/100 · ${item.raw.backend}`}}} : {}),
+        },
+      },
+    }));
+    if (isScore) card.querySelector('#method-link').addEventListener('click', () => document.getElementById('methodology').open = true);
+  });
+}
+
+function buildTable() {
+  const tb = document.querySelector('#sessions tbody');
+  tb.innerHTML = '';
+  visible().slice().reverse().forEach(s => {
+    const a = s.analysis || {};
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${s.date} ${s.time}</td>
+      <td><span class="pill" style="background:${color(s.lang)}">${s.lang}</span></td>
+      <td>${(s.duration_sec / 60).toFixed(1)}</td>
+      <td>${s.total_words}</td>
+      <td>${s.unique_words}</td>
+      <td>${s.wpm}</td>
+      <td>${s.articulation_wpm}</td>
+      <td>${(s.speech_ratio * 100).toFixed(1)}%</td>
+      <td>${s.mattr_50}</td>
+      <td>${s.max_pause_sec}s</td>
+      <td>${s.longest_run_words}</td>
+      <td>${a.errors_per_100_words ?? '—'}</td>
+      <td>${a.cefr_estimate ?? '—'}</td>
+      <td title="${escapeHtml(s.proficiency?.summary || '')}">${scoreText(s.proficiency)}</td>`;
+    tr.tabIndex = 0;
+    tr.setAttribute('aria-label', `${s.language} ${s.date}, proficiency ${scoreText(s.proficiency)}`);
+    tr.addEventListener('keydown', e => {if (e.key === 'Enter' || e.key === ' ') {e.preventDefault(); showDetail(s);}});
+    tr.addEventListener('click', () => showDetail(s));
+    tb.appendChild(tr);
+  });
+}
+
+function showDetail(s) {
+  const d = document.getElementById('detail');
+  d.style.display = 'block';
+  document.getElementById('detail-title').textContent =
+    `${s.language} — ${s.date} ${s.time}`;
+  const a = s.analysis || {};
+  const stats = [
+    ['Words', s.total_words], ['Unique', s.unique_words], ['WPM', s.wpm],
+    ['Speech', (s.speech_ratio * 100).toFixed(1) + '%'],
+    ['Fillers/min', s.fillers_per_min],
+    ['Pauses >2s', s.pauses_over_2s],
+    ['Lookup Qs', s.lookup_questions],
+    ['Errors/100w', a.errors_per_100_words ?? '—'],
+    ['Legacy CEFR', a.cefr_estimate ?? '—'],
+    ['Proficiency /100', scoreText(s.proficiency)],
+  ];
+  document.getElementById('detail-stats').innerHTML =
+    stats.map(([k, v]) => `<span><b>${v}</b>${k}</span>`).join('');
+  document.getElementById('detail-analysis').innerHTML =
+    s.analysis_md ? marked.parse(s.analysis_md) : '<em>No analysis yet.</em>';
+  document.getElementById('detail-transcript').textContent =
+    s.transcript || '(no transcript)';
+  document.getElementById('transcript-sharing').textContent = window.SITE_AUDIENCE === 'public'
+    ? (s.transcript_visibility === 'approved' ? 'Shared with permission.' : 'Not shared publicly.')
+    : ({approved: 'Approved for public sharing (current text).', changed: 'Text changed since approval — omitted publicly until reviewed again.', omitted: 'Not shared publicly. You can approve this session by its ID: ' + s.id}[s.public_transcript_status || 'omitted']);
+  const p = s.proficiency || {status:'unrated', summary:'Not yet assessed with the new rubric.'};
+  document.getElementById('detail-proficiency').innerHTML = `<p><strong>${scoreText(p)}${p.status === 'rated' ? '/100 · experimental monologue estimate' : ''}</strong> — ${escapeHtml(p.summary)}</p>${p.limitations ? `<p>${escapeHtml(p.limitations)}</p>` : ''}${p.dimensions ? `<details open><summary>Score breakdown &amp; transcript evidence</summary><p>Each dimension has 25% weight. Band 1 = A1, 2 = A2, 3 = B1, 4 = B2, 5 = C1, 6 = C2. Intermediate fractions are local judgments, not calibrated distances.</p>${Object.entries(p.dimensions).map(([k,v]) => `<div class="dimension"><strong>${escapeHtml(k[0].toUpperCase()+k.slice(1))}: ${v.band}/6 · ${bandText(v.band)}</strong><p>${escapeHtml(v.rationale)}</p>${v.quotes.map(q=>`<blockquote>${escapeHtml(q)}</blockquote>`).join('')}</div>`).join('')}<p>Rubric: ${escapeHtml(p.rubric_version)} · ${escapeHtml(p.rater)}<br>Readable text: ${escapeHtml(s.transcription_backend || 'local/whisper')} · Timing: ${escapeHtml(s.metrics_backend || s.transcription_backend || 'local/whisper')}</p></details>` : ''}`;
+  d.scrollIntoView({ behavior: 'smooth' });
+}
+
+function render() {
+  buildCharts();
+  buildTable();
+  document.getElementById('detail').style.display = 'none';
+}
+render();
+</script>
+</body>
+</html>
