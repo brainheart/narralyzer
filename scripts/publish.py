@@ -20,7 +20,7 @@ SOURCE_FILES = (
     'scripts/publish.py', 'scripts/configure_api_key.py',
     'tests/test_narralyze.py', 'tests/test_proficiency.py', 'tests/test_publication.py',
     'docs/analysis-format.md', 'docs/proficiency-methodology.md',
-    'docs/transcription.md', 'docs/publishing.md', 'explorer/index.html',
+    'docs/transcription.md', 'docs/publishing.md', 'docs/narralogue.md', 'explorer/index.html',
 )
 
 

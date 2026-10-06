@@ -18,6 +18,13 @@
   header { padding: 1.2rem 2rem 0.6rem; }
   h1 { margin: 0; font-size: 1.5rem; }
   h1 small { font-weight: 400; color: var(--muted); font-size: 0.9rem; margin-left: .8rem; }
+  .podcast-callout { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem;
+    max-width: 76rem; margin: 1rem 0; padding: 1rem 1.1rem; border-radius: 10px;
+    background: #edf4f7; border: 1px solid #c7dce5; }
+  .podcast-callout a { display: inline-flex; align-items: center; gap: .5rem;
+    font-weight: 650; color: #174d6c; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .podcast-callout a:focus-visible { outline: 3px solid #225d85; outline-offset: 5px; }
+  .podcast-callout span { color: #425b68; font-size: .9rem; line-height: 1.5; }
   .filters { padding: 0 2rem 0.8rem; display: flex; gap: .5rem; }
   .filters button { border: 1px solid #ccc; background: var(--card); padding: .3rem .9rem;
                     border-radius: 999px; cursor: pointer; font-size: .85rem; }
@@ -79,6 +86,10 @@
 <header>
   <h1>Narralogue Explorer <small>talk to yourself, measurably</small></h1>
   <p style="max-width:76rem;line-height:1.5">A <a href="https://everydaysystems.com/">language-learning Everyday System</a>: describe the world around you in your target language for ten minutes a day. Record an occasional session, reflect on the analysis, and practice a few useful sentences.</p>
+  <aside class="podcast-callout" aria-label="Narralogue podcast episode">
+    <a href="https://podcast.everydaysystems.com/episode/106/"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M6 3.5v13l10-6.5z"/></svg>Listen to the Narralogue episode</a>
+    <span>Everyday Systems Podcast · Episode 106 · The idea behind the practice, in Reinhard’s own words.</span>
+  </aside>
   <p id="audience-note" style="max-width:76rem;line-height:1.5"></p>
   <p><a href="https://github.com/brainheart/narralyzer">Get the tool &amp; try the methodology</a></p>
 </header>

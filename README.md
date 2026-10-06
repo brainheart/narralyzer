@@ -1,8 +1,12 @@
 # Narralyzer
 
+**Start here: [Listen to Everyday Systems Podcast episode 106 — Narralogue](https://podcast.everydaysystems.com/episode/106/).** Reinhard explains the practice and how it fits into everyday language learning. The episode page includes audio and a transcript.
+
 [Narralogue Explorer](https://narralyzer.everydaysystems.com/) tracks an everyday language-learning practice: speak continuously in your target language for a timed session, describing the world around you. Record occasionally, inspect patterns, and turn a few useful corrections into practice.
 
 The public explorer includes Reinhard's metrics, analyses, Anki sentence examples, and experimental proficiency ratings. Full transcripts appear only after individual approval. Short quotations used in analyses and rating evidence remain visible. Recordings are not published.
+
+Read the [Narralogue practice guide](docs/narralogue.md) for the idea behind the tool.
 
 ## Try it yourself
 
