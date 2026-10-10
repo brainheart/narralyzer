@@ -186,7 +186,7 @@ function buildCharts() {
     card.className = isScore ? 'card score-card' : 'card';
     const rated = data.filter(s => s.proficiency?.status === 'rated').length;
     const withheld = data.filter(s => s.proficiency?.status === 'withheld').length;
-    card.innerHTML = `<h3>${title}</h3>${isScore ? `<p class="score-note">Equal-weight ratings of range, accuracy, coherence and fluency, based on transcripts and timing—not a CEFR test. Small changes may be rating noise.<br>${rated} of ${data.length} sessions scored; ${withheld} withheld. Gaps are unscored. Triangles = GPT text; circles = Whisper text. <a href="#methodology" id="method-link">Method &amp; limitations</a></p>` : ''}<div class="chart-wrap"><canvas aria-label="${title}" role="img"></canvas></div>`;
+    card.innerHTML = `<h3>${title}</h3>${isScore ? `<p class="score-note">Equal-weight ratings of range, accuracy, coherence and fluency, based on transcripts and timing—not a CEFR test. Small changes may be rating noise.<br>${rated} of ${data.length} sessions scored; ${withheld} withheld. Lines connect scored sessions; withheld sessions have no dot. <a href="#methodology" id="method-link">Method &amp; limitations</a></p>` : ''}<div class="chart-wrap"><canvas aria-label="${title}" role="img"></canvas></div>`;
     grid.appendChild(card);
     const datasets = langs
       .filter(l => filter === 'all' || l === filter)
@@ -200,9 +200,8 @@ function buildCharts() {
         })).filter(p => isScore || (p.y !== undefined && p.y !== null)),
         borderColor: color(l), backgroundColor: color(l),
         tension: isScore ? 0 : 0.25, pointRadius: isScore ? 5 : 4,
-        spanGaps: false,
-        pointStyle: isScore ? ctx => ctx.raw?.backend.startsWith('openai-api/') ? 'triangle' : 'circle' : 'circle',
-        segment: isScore ? {borderDash: ctx => ctx.p0.raw.backend !== ctx.p1.raw.backend ? [5, 5] : undefined} : undefined,
+        spanGaps: true,
+        pointStyle: 'circle',
       }))
       .filter(d => d.data.length);
     charts.push(new Chart(card.querySelector('canvas'), {
