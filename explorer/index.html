@@ -91,7 +91,7 @@
     <span>Everyday Systems Podcast · Episode 106 · The idea behind the practice, in Reinhard’s own words.</span>
   </aside>
   <p id="audience-note" style="max-width:76rem;line-height:1.5"></p>
-  <p><a href="https://github.com/brainheart/narralyzer">Get the tool &amp; try the methodology</a></p>
+  <p id="repository-link"><a href="https://github.com/brainheart/narralyzer">Get the tool &amp; try the methodology</a></p>
 </header>
 <div class="filters" id="filters">
   <button data-lang="all" class="active">All</button>
@@ -136,9 +136,10 @@ const bandText = n => {
   return n === base ? labels[base] : `${labels[base]} → ${labels[base + 1]} (${Math.round((n-base)*100)}% of local interval)`;
 };
 document.getElementById('methodology-body').innerHTML = marked.parse(window.PROFICIENCY_METHOD || 'Methodology unavailable.');
-document.getElementById('audience-note').textContent = window.SITE_AUDIENCE === 'public'
-  ? 'Public edition: full transcripts are omitted for privacy unless individually approved. Analyses, practice sentences, and short evidence quotations are included. Scores are experimental estimates, not test results.'
+document.getElementById('audience-note').innerHTML = window.SITE_AUDIENCE === 'public'
+  ? `Public Edition: This is an example Narralogue analysis based on Reinhard's real Narralogue sessions. You can see my progress (or lack thereof) on a variety of metrics over time, and detailed per-session feedback (including suggested anki material) by clicking on an individual session below.  Individual session transcripts are (mostly) suppressed for privacy (I have a corresponding private site where I can view those). I included a couple of English language sessions to see how it would respond to native-speaker level input. If this seems at all interesting, point your AI at the <a href="https://github.com/brainheart/narralyzer">GitHub repository page</a> and ask it to make you your own version.`
   : 'Private edition: full transcripts are included. The sharing status beside each transcript shows whether its current text is approved for the public edition.';
+document.getElementById('repository-link').hidden = window.SITE_AUDIENCE === 'public';
 const sessions = (window.SESSIONS || []).slice()
   .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 const langs = [...new Set(sessions.map(s => s.lang))];
