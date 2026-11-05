@@ -44,6 +44,12 @@
   th, td { text-align: right; padding: .45rem .6rem; border-bottom: 1px solid #eee; }
   th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
   th { color: var(--muted); font-weight: 600; cursor: default; }
+  #sessions th { padding: 0; }
+  #sessions th button { width: 100%; padding: .45rem .5rem; background: none; border: 0;
+    color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
+  #sessions th button:hover, #sessions th[aria-sort] { color: var(--ink); background: #f3f3ee; }
+  #sessions th button:focus-visible { outline: 2px solid #365c73; outline-offset: -2px; }
+  .sort-mark { margin-left: .25em; font-size: .8em; }
   tbody tr { cursor: pointer; }
   tbody tr:hover { background: #f3f3ee; }
   .pill { display: inline-block; padding: .1rem .55rem; border-radius: 999px;
@@ -104,12 +110,12 @@
 </details>
 
 <div class="card table-card">
-  <h3>Sessions (click a row for transcript &amp; analysis)</h3>
+  <h3>Sessions (click a row for transcript &amp; analysis; click a header to sort)</h3>
   <table id="sessions">
     <thead><tr>
-      <th>Date</th><th>Lang</th><th>Min</th><th>Words</th><th>Unique</th>
-      <th>WPM</th><th>Artic. WPM</th><th>Speech %</th><th>MATTR</th>
-      <th>Max pause</th><th>Longest run</th><th>Err/100w</th><th title="Historical holistic estimate, not a test result">Legacy CEFR</th><th>Proficiency /100</th>
+      <th data-key="date">Date</th><th data-key="lang">Lang</th><th data-key="duration_sec">Min</th><th data-key="total_words">Words</th><th data-key="unique_words">Unique</th>
+      <th data-key="wpm">WPM</th><th data-key="articulation_wpm">Artic. WPM</th><th data-key="speech_ratio">Speech %</th><th data-key="mattr_50">MATTR</th>
+      <th data-key="max_pause_sec">Max pause</th><th data-key="longest_run_words">Longest run</th><th data-key="errors">Err/100w</th><th data-key="cefr" title="Historical holistic estimate, not a test result">Legacy CEFR</th><th data-key="score">Proficiency /100</th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -223,10 +229,60 @@ function buildCharts() {
   });
 }
 
+let sortKey = 'date', sortDirection = 'descending';
+const timestamp = s => s.date + ' ' + s.time;
+function cefrRank(label) {
+  const bands = ['A1','A2','B1','B2','C1','C2'];
+  const matches = [...(label || '').matchAll(/([ABC][12])([+-]?)/g)];
+  if (!matches.length) return null;
+  return matches.reduce((sum, [,band,modifier]) => sum + bands.indexOf(band)
+    + (modifier === '+' ? 0.25 : modifier === '-' ? -0.25 : 0), 0) / matches.length;
+}
+function sortValue(s) {
+  switch (sortKey) {
+    case 'date': return timestamp(s);
+    case 'errors': return s.analysis?.errors_per_100_words;
+    case 'cefr': return cefrRank(s.analysis?.cefr_estimate);
+    case 'score': return s.proficiency?.status === 'rated' ? s.proficiency.score : null;
+    default: return s[sortKey];
+  }
+}
+function compareSessions(a, b) {
+  const x = sortValue(a), y = sortValue(b);
+  if ((x == null) !== (y == null)) return x == null ? 1 : -1;
+  const cmp = x > y ? 1 : x < y ? -1 : 0;
+  return (sortDirection === 'ascending' ? cmp : -cmp)
+    || timestamp(b).localeCompare(timestamp(a)) || a.id.localeCompare(b.id);
+}
+const sortHeaders = document.querySelectorAll('#sessions th[data-key]');
+sortHeaders.forEach(th => {
+  const key = th.dataset.key;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = th.textContent;
+  const mark = document.createElement('span');
+  mark.className = 'sort-mark';
+  mark.setAttribute('aria-hidden', 'true');
+  button.appendChild(mark);
+  th.scope = 'col';
+  th.replaceChildren(button);
+  button.addEventListener('click', () => {
+    sortDirection = key === sortKey ? (sortDirection === 'descending' ? 'ascending' : 'descending')
+      : (key === 'lang' ? 'ascending' : 'descending');
+    sortKey = key;
+    buildTable();
+  });
+});
 function buildTable() {
+  sortHeaders.forEach(th => {
+    const active = th.dataset.key === sortKey;
+    if (active) th.setAttribute('aria-sort', sortDirection);
+    else th.removeAttribute('aria-sort');
+    th.querySelector('.sort-mark').textContent = active ? (sortDirection === 'ascending' ? '▲' : '▼') : '↕';
+  });
   const tb = document.querySelector('#sessions tbody');
   tb.innerHTML = '';
-  visible().slice().reverse().forEach(s => {
+  visible().sort(compareSessions).forEach(s => {
     const a = s.analysis || {};
     const tr = document.createElement('tr');
     tr.innerHTML = `
